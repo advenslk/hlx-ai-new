@@ -61,6 +61,7 @@ export const DiscordSimulator: React.FC<DiscordSimulatorProps> = ({
 
   // Dynamic ticket panel customization state (matches bot's !panel-setup and screenshot)
   const defaultScreenshotConfig = {
+    is_active: true,
     title: '🎧 HelzerX Support Center 🎧',
     topLogoUrl: '/assets/helzerx-logo-3d.png',
     description: 'Need assistance? Our support team is here to help.\n\nCreate a ticket by selecting the appropriate category below. Please provide clear details so our team can assist you efficiently.',
@@ -137,18 +138,19 @@ export const DiscordSimulator: React.FC<DiscordSimulatorProps> = ({
     const raw = inputMessage;
     setInputMessage('');
 
-    // Check for container builder commands: !panel-setup or /panel-setup
+    // Check for container builder commands: *panel, !panel, *panel-setup, !panel-setup
     const trimmed = raw.trim().toLowerCase();
-    if (trimmed === '!panel-setup' || trimmed === '/panel-setup') {
+    if (trimmed === '!panel-setup' || trimmed === '/panel-setup' || trimmed === '*panel-setup' || trimmed === '*panel') {
       setSelectedChannel('create-a-ticket');
       setShowBuilderDashboard(true);
-      setSecurityNotice('🛠️ Container Builder Activated: Customize every block of the support panel below.');
+      setSecurityNotice('🛠️ 📚 Ticket Panel Dashboard Activated: Customize your support panel and categories.');
       setTimeout(() => setSecurityNotice(null), 5000);
       return;
     }
     if (trimmed === '!panel' || trimmed === '/panel') {
       setSelectedChannel('create-a-ticket');
-      setSecurityNotice('✅ Container Panel Loaded in #1. create-a-ticket.');
+      setShowBuilderDashboard(true);
+      setSecurityNotice('✅ Ticket Panel loaded in #1. create-a-ticket.');
       setTimeout(() => setSecurityNotice(null), 5000);
       return;
     }
@@ -480,121 +482,136 @@ export const DiscordSimulator: React.FC<DiscordSimulatorProps> = ({
                 </div>
               </div>
 
-              {/* Interactive Container Builder Dashboard (When Open) */}
+              {/* Official Ticket Panel Control Dashboard (Exact Match to Screenshot 2) */}
               {showBuilderDashboard && (
-                <div className="bg-[#2b2d31] rounded-xl border border-[#35373c] p-4 space-y-3 shadow-xl animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#35373c]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🛠️</span>
-                      <h3 className="text-sm font-bold text-white">HelzerX Container Panel Builder</h3>
-                      <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.2 rounded font-mono">
-                        Active
-                      </span>
+                <div className="bg-[#2b2d31] rounded-2xl border border-[#1f2023] p-5 shadow-2xl max-w-lg mx-auto space-y-3 animate-fade-in">
+                  {/* Header Block matching Screenshot 2 */}
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">📚</span>
+                        <h3 className="text-base font-bold text-white tracking-wide">Ticket Panel</h3>
+                      </div>
+                      <div className="text-xs text-[#dbdee1] space-y-0.5">
+                        <div>
+                          Status: <span className={panelConfig.is_active ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
+                            {panelConfig.is_active ? 'Active' : 'Disabled'}
+                          </span>
+                        </div>
+                        <div>
+                          Categories: <span className="text-white font-medium">5/5 active</span>
+                        </div>
+                      </div>
                     </div>
                     <button
                       onClick={() => setShowBuilderDashboard(false)}
-                      className="text-[#949ba4] hover:text-white text-xs cursor-pointer"
+                      className="text-[#949ba4] hover:text-white text-xs cursor-pointer px-2 py-1 bg-[#1e1f22] rounded border border-[#383a40]"
                     >
                       ✕ Close
                     </button>
                   </div>
 
-                  <p className="text-xs text-[#b5bac1] leading-relaxed">
-                    Configure each section of the support container below. Click any button to modify text, images, or test previews.
-                  </p>
+                  <div className="border-t border-[#383a40] my-2" />
 
-                  {/* Builder Interactive Button Grid (Matching Discord Bot Buttons) */}
-                  <div className="space-y-2 pt-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {/* Button Rows Matching Screenshot 2 Exactly */}
+                  <div className="space-y-2">
+                    {/* Row 0: [Edit Name] [Edit Message] */}
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
                           setTempConfig({ ...panelConfig });
                           setActiveBuilderModal('header');
                         }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#35373c] hover:bg-[#404249] text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>✏️ Edit Header & Title</span>
+                        Edit Name
                       </button>
                       <button
                         onClick={() => {
                           setTempConfig({ ...panelConfig });
                           setActiveBuilderModal('intro');
                         }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#35373c] hover:bg-[#404249] text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>📝 Edit Intro Text</span>
+                        Edit Message
+                      </button>
+                    </div>
+
+                    {/* Row 1: [Edit Placeholder] */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setTempConfig({ ...panelConfig });
+                          setActiveBuilderModal('header');
+                        }}
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#35373c] hover:bg-[#404249] text-white rounded transition-colors cursor-pointer"
+                      >
+                        Edit Placeholder
+                      </button>
+                    </div>
+
+                    {/* Row 2: [Disable Panel] [Manage Categories] */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setPanelConfig({ ...panelConfig, is_active: !panelConfig.is_active });
+                          setSecurityNotice(`Panel Status changed to: ${!panelConfig.is_active ? 'Active' : 'Disabled'}`);
+                          setTimeout(() => setSecurityNotice(null), 4000);
+                        }}
+                        className={`flex-1 px-4 py-2 text-xs font-semibold text-white rounded transition-colors cursor-pointer ${
+                          panelConfig.is_active
+                            ? 'bg-red-600 hover:bg-red-500'
+                            : 'bg-emerald-600 hover:bg-emerald-500'
+                        }`}
+                      >
+                        {panelConfig.is_active ? 'Disable Panel' : 'Enable Panel'}
                       </button>
                       <button
                         onClick={() => {
                           setTempConfig({ ...panelConfig });
                           setActiveBuilderModal('categories');
                         }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#5865F2] hover:bg-[#4752c4] text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>📋 Edit Categories List</span>
+                        Manage Categories
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      <button
-                        onClick={() => {
-                          setTempConfig({ ...panelConfig });
-                          setActiveBuilderModal('note');
-                        }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <span>ℹ️ Edit Note Section</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setTempConfig({ ...panelConfig });
-                          setActiveBuilderModal('images');
-                        }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <span>🖼️ Top Logo & Banner</span>
-                      </button>
+                    {/* Row 3: [Configure Logs] */}
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
                           setTempConfig({ ...panelConfig });
                           setActiveBuilderModal('footer');
                         }}
-                        className="px-3 py-2 text-xs font-medium bg-[#1e1f22] hover:bg-[#35373c] text-white rounded border border-[#35373c] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#5865F2] hover:bg-[#4752c4] text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>🏷️ Edit Footer Text</span>
+                        Configure Logs
                       </button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[#35373c]">
+                    {/* Row 4: [Send Panel] [Delete Panel] */}
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          setSecurityNotice('🔍 Live Preview Refreshed: Displaying current container styling below.');
-                          setTimeout(() => setSecurityNotice(null), 5000);
-                        }}
-                        className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>👁️ Test Live Preview</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSecurityNotice('🚀 Support Panel Published: Active and waiting for customer tickets.');
+                          setSecurityNotice('✅ Support Ticket Panel Sent & Published to #1. create-a-ticket.!');
                           setTimeout(() => setSecurityNotice(null), 5000);
                           setShowBuilderDashboard(false);
                         }}
-                        className="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded flex items-center gap-1.5 cursor-pointer"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-[#23a55a] hover:bg-[#1f9250] text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>🚀 Publish to Channel</span>
+                        Send Panel
                       </button>
                       <button
                         onClick={() => {
                           setPanelConfig(defaultScreenshotConfig);
                           setTempConfig(defaultScreenshotConfig);
-                          setSecurityNotice('🔄 Reset: Restored official HelzerX screenshot configuration.');
+                          setSecurityNotice('🔄 Ticket Panel Reset to Factory Defaults');
                           setTimeout(() => setSecurityNotice(null), 5000);
                         }}
-                        className="px-3 py-1.5 text-xs font-medium bg-red-600/80 hover:bg-red-600 text-white rounded flex items-center gap-1.5 cursor-pointer ml-auto"
+                        className="flex-1 px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded transition-colors cursor-pointer"
                       >
-                        <span>🔄 Reset Defaults</span>
+                        Delete Panel
                       </button>
                     </div>
                   </div>

@@ -1,16 +1,16 @@
 """
-HELZERX AI Support - Setup & Container Panel Builder
-Provides interactive container builder dashboard (!panel-setup & /panel-setup),
-live previews, customizable sections, and seamless container embeds.
+HELZERX AI Support - Exact Ticket Panel Setup & Container Builder
+Replicates the exact Discord Ticket Panel control dashboard and container builder from user screenshots.
+Supports *panel, !panel, !panel-setup, /panel, and /panel-setup.
 """
 from __future__ import annotations
 
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, List
 
-from bot.config import config
+from bot.config import config, TICKET_CATEGORIES
 from bot.panel_config import panel_config, CustomPanelConfig
 from bot.security.permissions import require_admin
 from bot.embeds.ticket_embeds import create_panel_embed, SEAMLESS_CONTAINER_COLOR
@@ -19,17 +19,54 @@ from bot.utils.logger import logger
 
 
 # ==========================================
-# MODALS FOR CONTAINER BUILDER
+# INTERACTIVE MODALS FOR TICKET PANEL
 # ==========================================
 
-class HeaderTitleModal(ui.Modal, title="Edit Header & Dropdown Placeholder"):
-    title_input = ui.TextInput(
-        label="Container Title",
+class EditNameModal(ui.Modal, title="Edit Ticket Panel Name"):
+    name_input = ui.TextInput(
+        label="Panel Title / Name",
         placeholder="e.g. 🎧 HelzerX Support Center 🎧",
         default=panel_config.title[:100],
         required=True,
         max_length=100
     )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        panel_config.title = self.name_input.value.strip()
+        panel_config.save()
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+
+class EditMessageModal(ui.Modal, title="Edit Panel Message"):
+    intro_input = ui.TextInput(
+        label="Introduction / Subtitle",
+        style=discord.TextStyle.paragraph,
+        placeholder="Need assistance? Our support team is here to help...",
+        default=panel_config.description[:1000],
+        required=True,
+        max_length=1500
+    )
+    note_input = ui.TextInput(
+        label="Please Note Callout",
+        style=discord.TextStyle.paragraph,
+        placeholder="Submit one ticket per issue and keep all related communication within your ticket.",
+        default=panel_config.note_text[:400],
+        required=True,
+        max_length=500
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        panel_config.description = self.intro_input.value.strip()
+        panel_config.note_text = self.note_input.value.strip()
+        panel_config.save()
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+
+class EditPlaceholderModal(ui.Modal, title="Edit Dropdown Placeholder"):
     placeholder_input = ui.TextInput(
         label="Dropdown Placeholder",
         placeholder="e.g. Select a ticket category",
@@ -39,284 +76,246 @@ class HeaderTitleModal(ui.Modal, title="Edit Header & Dropdown Placeholder"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        panel_config.title = self.title_input.value.strip()
         panel_config.select_placeholder = self.placeholder_input.value.strip() or "Select a ticket category"
         panel_config.save()
-        await interaction.response.send_message("✅ **Header & Placeholder Updated!**", ephemeral=True)
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
 
 
-class IntroTextModal(ui.Modal, title="Edit Intro & Subtitle Text"):
-    intro_input = ui.TextInput(
-        label="Intro Description",
-        style=discord.TextStyle.paragraph,
-        placeholder="Need assistance? Our support team is here to help...",
-        default=panel_config.description[:1000],
-        required=True,
-        max_length=1500
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        panel_config.description = self.intro_input.value.strip()
-        panel_config.save()
-        await interaction.response.send_message("✅ **Intro Description Updated!**", ephemeral=True)
-
-
-class CategoriesTextModal(ui.Modal, title="Edit Support Categories Section"):
-    section_title = ui.TextInput(
-        label="Section Heading",
-        placeholder="e.g. Support Categories",
-        default=panel_config.support_categories_title[:80],
-        required=True,
-        max_length=80
-    )
-    categories_list = ui.TextInput(
-        label="Categories Bullet List",
-        style=discord.TextStyle.paragraph,
-        placeholder="• 👥 **General Support**\n• 📚 **Cloud & Hosting**...",
-        default=panel_config.categories_list[:800],
-        required=True,
-        max_length=1000
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        panel_config.support_categories_title = self.section_title.value.strip()
-        panel_config.categories_list = self.categories_list.value.strip()
-        panel_config.save()
-        await interaction.response.send_message("✅ **Support Categories Section Updated!**", ephemeral=True)
-
-
-class NoteTextModal(ui.Modal, title="Edit Note Section"):
-    note_heading = ui.TextInput(
-        label="Note Heading",
-        placeholder="e.g. Please Note",
-        default=panel_config.note_title[:60],
-        required=True,
-        max_length=60
-    )
-    note_body = ui.TextInput(
-        label="Note Description",
-        style=discord.TextStyle.paragraph,
-        placeholder="Submit one ticket per issue and keep all related communication within your ticket.",
-        default=panel_config.note_text[:400],
-        required=True,
-        max_length=500
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        panel_config.note_title = self.note_heading.value.strip()
-        panel_config.note_text = self.note_body.value.strip()
-        panel_config.save()
-        await interaction.response.send_message("✅ **Note Section Updated!**", ephemeral=True)
-
-
-class ImagesModal(ui.Modal, title="Set Top Logo & Bottom Banner"):
-    top_logo_input = ui.TextInput(
-        label="Top Logo URL (Optional)",
-        placeholder="https://.../helzerx-logo-3d.png",
-        default=panel_config.top_image_url[:250] if panel_config.top_image_url else "",
-        required=False,
-        max_length=250
-    )
-    bottom_banner_input = ui.TextInput(
-        label="Bottom Banner Image URL (Optional)",
-        placeholder="https://.../helzerx-banner.png",
-        default=panel_config.bottom_banner_url[:250] if panel_config.bottom_banner_url else "",
-        required=False,
-        max_length=250
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        panel_config.top_image_url = self.top_logo_input.value.strip()
-        panel_config.bottom_banner_url = self.bottom_banner_input.value.strip()
-        panel_config.save()
-        await interaction.response.send_message("✅ **Banner & Logo URLs Saved!**", ephemeral=True)
-
-
-class FooterModal(ui.Modal, title="Edit Footer Attribution"):
-    footer1 = ui.TextInput(
-        label="Footer Line 1 (Company Name)",
-        placeholder="e.g. HelzerX Technologies",
-        default=panel_config.footer_line1[:80],
-        required=True,
-        max_length=80
-    )
-    footer2 = ui.TextInput(
-        label="Footer Line 2 (Copyright)",
-        placeholder="e.g. © 2026 HelzerX Technologies (Pvt) Ltd. All rights reserved.",
-        default=panel_config.footer_line2[:100],
+class ConfigureLogsModal(ui.Modal, title="Configure Ticket Logs Channel"):
+    channel_input = ui.TextInput(
+        label="Transcript / Logs Channel ID or Mention",
+        placeholder="e.g. 123456789012345678 or #support-logs",
+        default=str(panel_config.logs_channel_id or "") if panel_config.logs_channel_id else "",
         required=True,
         max_length=100
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        panel_config.footer_line1 = self.footer1.value.strip()
-        panel_config.footer_line2 = self.footer2.value.strip()
+        raw = self.channel_input.value.strip().replace("<#", "").replace(">", "")
+        if raw.isdigit():
+            panel_config.logs_channel_id = int(raw)
+            panel_config.save()
+            embed = build_ticket_panel_control_embed()
+            view = TicketPanelControlView()
+            await interaction.response.edit_message(embed=embed, view=view)
+        else:
+            await interaction.response.send_message("❌ Invalid channel ID. Please provide a numeric ID or mention.", ephemeral=True)
+
+
+class ManageCategoriesSelect(ui.Select):
+    """Multi-select menu for enabling or disabling ticket categories."""
+
+    def __init__(self):
+        primary_categories = [
+            ("general", "General Support", "👥"),
+            ("cloud_hosting", "Cloud & Hosting", "📚"),
+            ("technical", "Technical Issues", "🖥️"),
+            ("billing", "Billing & Payments", "💳"),
+            ("partnership", "Partnerships & Business", "🚀")
+        ]
+        options = [
+            discord.SelectOption(
+                label=name,
+                value=cat_id,
+                emoji=emoji,
+                default=cat_id in panel_config.active_category_ids
+            )
+            for cat_id, name, emoji in primary_categories
+        ]
+        super().__init__(
+            placeholder="Select active ticket categories...",
+            min_values=1,
+            max_values=len(options),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        panel_config.active_category_ids = self.values
         panel_config.save()
-        await interaction.response.send_message("✅ **Footer Attribution Updated!**", ephemeral=True)
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+
+class ManageCategoriesView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=180)
+        self.add_item(ManageCategoriesSelect())
+
+    @ui.button(label="Back to Panel Control", style=discord.ButtonStyle.secondary, emoji="⬅️")
+    async def back_button(self, interaction: discord.Interaction, button: ui.Button):
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+
+class DeleteConfirmView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @ui.button(label="Confirm Reset / Delete", style=discord.ButtonStyle.danger, emoji="🗑️")
+    async def confirm_delete(self, interaction: discord.Interaction, button: ui.Button):
+        global panel_config
+        panel_config = CustomPanelConfig()
+        panel_config.save()
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(content="✅ **Ticket Panel Reset to Factory Defaults!**", embed=embed, view=view)
+
+    @ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel_delete(self, interaction: discord.Interaction, button: ui.Button):
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(content=None, embed=embed, view=view)
 
 
 # ==========================================
-# INTERACTIVE CONTAINER BUILDER VIEW
+# EXACT TICKET PANEL CONTROL VIEW (SCREENSHOT 2)
 # ==========================================
 
-class ContainerPanelBuilderView(ui.View):
+def build_ticket_panel_control_embed() -> discord.Embed:
     """
-    Interactive Container Customizer Dashboard inspired by container builder bots.
-    Provides real-time modals to customize each section of the ticket panel.
+    Builds the exact dashboard embed matching the user's screenshot:
+    📚 Ticket Panel
+    Status: Active
+    Categories: 5/5 active
+    """
+    embed = discord.Embed(
+        title="📚 Ticket Panel",
+        description=(
+            f"**Status:** {panel_config.status_display}\n"
+            f"**Categories:** {panel_config.categories_display}"
+        ),
+        color=SEAMLESS_CONTAINER_COLOR
+    )
+    if panel_config.logs_channel_id:
+        embed.add_field(name="Logs Channel", value=f"<#{panel_config.logs_channel_id}>", inline=True)
+    return embed
+
+
+class TicketPanelControlView(ui.View):
+    """
+    Exact button layout matching Screenshot 2:
+    [Edit Name] [Edit Message]
+    [Edit Placeholder]
+    [Disable Panel] [Manage Categories]
+    [Configure Logs]
+    [Send Panel] [Delete Panel]
     """
 
     def __init__(self):
         super().__init__(timeout=None)
 
-    @ui.button(label="Edit Header & Title", style=discord.ButtonStyle.secondary, emoji="✏️", row=0)
-    async def edit_header(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(HeaderTitleModal())
+        # Update disable/enable button label and style based on state
+        self.toggle_panel_btn.label = "Disable Panel" if panel_config.is_active else "Enable Panel"
+        self.toggle_panel_btn.style = discord.ButtonStyle.danger if panel_config.is_active else discord.ButtonStyle.success
 
-    @ui.button(label="Edit Intro Text", style=discord.ButtonStyle.secondary, emoji="📝", row=0)
-    async def edit_intro(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(IntroTextModal())
+    # Row 0
+    @ui.button(label="Edit Name", style=discord.ButtonStyle.secondary, row=0)
+    async def edit_name_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(EditNameModal())
 
-    @ui.button(label="Edit Categories", style=discord.ButtonStyle.secondary, emoji="📋", row=0)
-    async def edit_categories(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(CategoriesTextModal())
+    @ui.button(label="Edit Message", style=discord.ButtonStyle.secondary, row=0)
+    async def edit_message_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(EditMessageModal())
 
-    @ui.button(label="Edit Note Box", style=discord.ButtonStyle.secondary, emoji="ℹ️", row=1)
-    async def edit_note(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(NoteTextModal())
+    # Row 1
+    @ui.button(label="Edit Placeholder", style=discord.ButtonStyle.secondary, row=1)
+    async def edit_placeholder_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(EditPlaceholderModal())
 
-    @ui.button(label="Top Logo & Banner", style=discord.ButtonStyle.secondary, emoji="🖼️", row=1)
-    async def edit_images(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(ImagesModal())
+    # Row 2
+    @ui.button(label="Disable Panel", style=discord.ButtonStyle.danger, row=2)
+    async def toggle_panel_btn(self, interaction: discord.Interaction, button: ui.Button):
+        panel_config.is_active = not panel_config.is_active
+        panel_config.save()
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.edit_message(embed=embed, view=view)
 
-    @ui.button(label="Edit Footer", style=discord.ButtonStyle.secondary, emoji="🏷️", row=1)
-    async def edit_footer(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(FooterModal())
-
-    @ui.button(label="Live Preview", style=discord.ButtonStyle.primary, emoji="👁️", row=2)
-    async def live_preview(self, interaction: discord.Interaction, button: ui.Button):
-        embed = create_panel_embed()
-        view = TicketPanelView()
-        await interaction.response.send_message(
-            content="🔍 **Live Container Panel Preview (Seamless Style):**",
-            embed=embed,
-            view=view,
-            ephemeral=True
+    @ui.button(label="Manage Categories", style=discord.ButtonStyle.primary, row=2)
+    async def manage_categories_button(self, interaction: discord.Interaction, button: ui.Button):
+        embed = discord.Embed(
+            title="📋 Manage Ticket Categories",
+            description="Select which categories should be active on the support panel dropdown below:",
+            color=SEAMLESS_CONTAINER_COLOR
         )
+        view = ManageCategoriesView()
+        await interaction.response.edit_message(embed=embed, view=view)
 
-    @ui.button(label="Publish to Channel", style=discord.ButtonStyle.success, emoji="🚀", row=2)
-    async def publish_panel(self, interaction: discord.Interaction, button: ui.Button):
+    # Row 3
+    @ui.button(label="Configure Logs", style=discord.ButtonStyle.primary, row=3)
+    async def configure_logs_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(ConfigureLogsModal())
+
+    # Row 4
+    @ui.button(label="Send Panel", style=discord.ButtonStyle.success, row=4)
+    async def send_panel_button(self, interaction: discord.Interaction, button: ui.Button):
         embed = create_panel_embed()
         view = TicketPanelView()
         await interaction.channel.send(embed=embed, view=view)
         await interaction.response.send_message(
-            f"✅ **Container Support Panel Published!** Active in {interaction.channel.mention}.",
+            f"✅ **Support Ticket Panel Sent!** Active in {interaction.channel.mention}.",
             ephemeral=True
         )
 
-    @ui.button(label="Reset Defaults", style=discord.ButtonStyle.danger, emoji="🔄", row=2)
-    async def reset_defaults(self, interaction: discord.Interaction, button: ui.Button):
-        global panel_config
-        panel_config = CustomPanelConfig()
-        panel_config.save()
-        await interaction.response.send_message(
-            "🔄 **Reset Complete!** Restored official HelzerX Support Center screenshot template.",
-            ephemeral=True
+    @ui.button(label="Delete Panel", style=discord.ButtonStyle.danger, row=4)
+    async def delete_panel_button(self, interaction: discord.Interaction, button: ui.Button):
+        embed = discord.Embed(
+            title="⚠️ Delete / Reset Panel Configuration?",
+            description="Are you sure you want to reset the panel configuration back to default HelzerX branding?",
+            color=0xEF4444
         )
-
-
-def build_builder_dashboard_embed() -> discord.Embed:
-    """Builds the main control embed for the container panel customizer."""
-    embed = discord.Embed(
-        title="🛠️ HelzerX Container Panel Builder",
-        description=(
-            "Welcome to the **Interactive Support Panel Customizer**.\n"
-            "Use the controls below to configure your server's support container message live. "
-            "Click any button to edit text, images, or test previews."
-        ),
-        color=SEAMLESS_CONTAINER_COLOR
-    )
-
-    embed.add_field(
-        name="📌 Current Configuration Status",
-        value=(
-            f"• **Title:** `{panel_config.title}`\n"
-            f"• **Dropdown Placeholder:** `{panel_config.select_placeholder}`\n"
-            f"• **Top Logo URL:** `{'Set' if panel_config.top_image_url else 'None'}`\n"
-            f"• **Bottom Banner URL:** `{'Set' if panel_config.bottom_banner_url else 'None'}`\n"
-            f"• **Side Color Line:** `Disabled (Seamless Container Style)`\n"
-            f"• **Footer Line 1:** `{panel_config.footer_line1}`"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="⚡ Quick Actions",
-        value=(
-            "• `[👁️ Live Preview]` Test how it looks ephemerally.\n"
-            "• `[🚀 Publish to Channel]` Post permanent panel with active category select dropdown.\n"
-            "• `[🔄 Reset Defaults]` Revert all sections back to the official screenshot template."
-        ),
-        inline=False
-    )
-
-    embed.set_footer(text="HelzerX Support Bot • Container Builder V2")
-    return embed
+        view = DeleteConfirmView()
+        await interaction.response.edit_message(embed=embed, view=view)
 
 
 # ==========================================
-# SETUP COG DEFINITION
+# SETUP COG REGISTRATION
 # ==========================================
 
 class SetupCog(commands.Cog):
-    """Cog for administrator setup and container panel customizer."""
+    """Cog handling exact *panel and !panel-setup ticket controls."""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # Text Prefix Command: !panel-setup
-    @commands.command(name="panel-setup")
+    # Supports *panel and !panel
+    @commands.command(name="panel", aliases=["panel-setup"])
     @commands.has_permissions(administrator=True)
-    async def panel_setup_prefix(self, ctx: commands.Context):
-        """Launches the interactive Container Builder Dashboard via text command."""
-        embed = build_builder_dashboard_embed()
-        view = ContainerPanelBuilderView()
+    async def panel_text_command(self, ctx: commands.Context):
+        """Displays the exact Ticket Panel Control Dashboard."""
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
         await ctx.send(embed=embed, view=view)
 
-    # Slash Command: /panel-setup
+    # Supports /panel
+    @app_commands.command(
+        name="panel",
+        description="Opens the official Ticket Panel Control Dashboard."
+    )
+    @require_admin()
+    async def panel_slash_command(self, interaction: discord.Interaction):
+        """Launches the Ticket Panel Dashboard."""
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    # Supports /panel-setup
     @app_commands.command(
         name="panel-setup",
-        description="Opens the interactive Container Builder Dashboard to customize the support ticket panel."
+        description="Opens the interactive Ticket Panel Control Dashboard."
     )
     @require_admin()
     async def panel_setup_slash(self, interaction: discord.Interaction):
-        """Launches the interactive Container Builder Dashboard via slash command."""
-        embed = build_builder_dashboard_embed()
-        view = ContainerPanelBuilderView()
+        """Launches the Ticket Panel Dashboard."""
+        embed = build_ticket_panel_control_embed()
+        view = TicketPanelControlView()
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    # Slash Command: /panel
-    @app_commands.command(
-        name="panel",
-        description="Posts the official HELZERX Support Ticket Panel to the current channel."
-    )
-    @require_admin()
-    async def panel_command(self, interaction: discord.Interaction):
-        """Directly sends the ticket container panel."""
-        embed = create_panel_embed()
-        view = TicketPanelView()
-        await interaction.channel.send(embed=embed, view=view)
-        await interaction.response.send_message("✅ Support panel successfully posted.", ephemeral=True)
-
-    # Text Prefix Command: !panel
-    @commands.command(name="panel")
-    @commands.has_permissions(administrator=True)
-    async def panel_prefix(self, ctx: commands.Context):
-        """Directly sends the ticket container panel via text command."""
-        embed = create_panel_embed()
-        view = TicketPanelView()
-        await ctx.send(embed=embed, view=view)
-
-    # Slash Command: /panel-reset
+    # Supports /panel-reset
     @app_commands.command(
         name="panel-reset",
         description="Resets ticket panel configuration to default HelzerX screenshot template."
@@ -331,7 +330,7 @@ class SetupCog(commands.Cog):
             ephemeral=True
         )
 
-    # Slash Command: /sync-commands
+    # Supports /sync-commands
     @app_commands.command(
         name="sync-commands",
         description="Force instant synchronization of all slash commands to this server."
@@ -350,54 +349,6 @@ class SetupCog(commands.Cog):
         except Exception as e:
             logger.error(f"Failed to sync commands: {e}")
             await interaction.followup.send(f"❌ Synchronization failed: {e}", ephemeral=True)
-
-    @app_commands.command(name="setup", description="Initializes HELZERX bot configuration and verifies permissions.")
-    @require_admin()
-    async def setup_command(self, interaction: discord.Interaction):
-        """Runs automated verification checks on roles and channels."""
-        await interaction.response.defer(ephemeral=True)
-        guild = interaction.guild
-        checks = []
-
-        if config.TICKET_CATEGORY_ID:
-            cat = guild.get_channel(config.TICKET_CATEGORY_ID)
-            checks.append(f"• Ticket Category: `{'Configured (' + cat.name + ')' if cat else 'Channel ID not found'}`")
-        else:
-            checks.append("• Ticket Category: `Not configured (will create at server root)`")
-
-        valid_support = [r.name for r_id in config.SUPPORT_ROLE_IDS if (r := guild.get_role(r_id))]
-        checks.append(f"• Support Roles: `{', '.join(valid_support) if valid_support else 'No matching roles configured'}`")
-
-        valid_admin = [r.name for r_id in config.ADMIN_ROLE_IDS if (r := guild.get_role(r_id))]
-        checks.append(f"• Admin Roles: `{', '.join(valid_admin) if valid_admin else 'None (uses Guild Administrator permission)'}`")
-
-        if config.TRANSCRIPT_CHANNEL_ID:
-            t_chan = guild.get_channel(config.TRANSCRIPT_CHANNEL_ID)
-            checks.append(f"• Transcript Archive: `{'Configured (' + t_chan.name + ')' if t_chan else 'Not found'}`")
-
-        embed = discord.Embed(
-            title="HelzerX Support • System Setup Audit",
-            description="\n".join(checks),
-            color=SEAMLESS_CONTAINER_COLOR
-        )
-        embed.set_footer(text=config.BRAND_FOOTER)
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @app_commands.command(name="config", description="Inspects current active bot configuration and environment settings.")
-    @require_admin()
-    async def config_command(self, interaction: discord.Interaction):
-        """Displays non-sensitive environment configuration without exposing provider details."""
-        embed = discord.Embed(
-            title="HelzerX Bot Configuration",
-            color=SEAMLESS_CONTAINER_COLOR
-        )
-        embed.add_field(name="Diagnostic Engine", value="`Active (High-Speed Automated)`", inline=True)
-        embed.add_field(name="Auto-Triage", value="`Enabled`" if config.AI_AUTO_RESPONSE_ENABLED else "`Disabled`", inline=True)
-        embed.add_field(name="Rate Limit", value=f"`{config.RATE_LIMIT_PER_MINUTE} msgs/min`", inline=True)
-        embed.add_field(name="Mask Sensitive Data", value=f"`{config.MASK_SENSITIVE_DATA}`", inline=True)
-        embed.add_field(name="Database Mode", value="`PostgreSQL`" if "postgresql" in config.DATABASE_URL else "`SQLite (Dev/Fallback)`", inline=True)
-        embed.set_footer(text=config.BRAND_FOOTER)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

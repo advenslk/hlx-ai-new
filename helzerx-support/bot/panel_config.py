@@ -1,14 +1,13 @@
 """
-HELZERX AI Support - Customizable Ticket Panel Configuration Store
-Persists custom panel title, description, colors, banner images, and footers.
-Designed to match the exact HelzerX Support Center Container layout.
+HELZERX AI Support - Ticket Panel Configuration Store
+Matches the exact Ticket Panel and Container Builder control layout.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Optional
+from dataclasses import dataclass, field, asdict
+from typing import Optional, List
 from bot.config import config, BASE_DIR
 
 CONFIG_FILE = BASE_DIR / "panel_config.json"
@@ -18,7 +17,7 @@ CONFIG_FILE = BASE_DIR / "panel_config.json"
 class CustomPanelConfig:
     # Header & Title
     title: str = "🎧 HelzerX Support Center 🎧"
-    top_image_url: str = "" # URL for top logo (e.g. 3D metallic HelzerX logo)
+    top_image_url: str = "/assets/helzerx-logo-3d.png"
     
     # Intro Description
     description: str = (
@@ -36,21 +35,30 @@ class CustomPanelConfig:
         "• 💳 **Billing & Payments**\n"
         "• 🚀 **Partnerships & Business**"
     )
+    active_category_ids: List[str] = field(default_factory=lambda: [
+        "general", "cloud_hosting", "technical", "billing", "partnership"
+    ])
     
     # Note Section
     note_title: str = "Please Note"
     note_text: str = "Submit one ticket per issue and keep all related communication within your ticket."
     
     # Bottom Banner & Branding
-    bottom_banner_url: str = "" # URL for lower banner (e.g. HELZERX SUPPORT - YOUR TECH PARTNER)
+    bottom_banner_url: str = "/assets/helzerx-banner.png"
     footer_line1: str = "HelzerX Technologies"
     footer_line2: str = "© 2026 HelzerX Technologies (Pvt) Ltd. All rights reserved."
     
     # Dropdown Component Placeholder
     select_placeholder: str = "Select a ticket category"
     
-    # Container Side Color: #2B2D31 blends into Discord embed background to remove the side color line
+    # Panel Status & Logistics
+    is_active: bool = True
+    target_channel_id: Optional[int] = None
+    logs_channel_id: Optional[int] = None
+    
+    # Container Accent Color ('none' or hex, default 0x2B2D31 for seamless container without side lines)
     side_color_hex: str = "#2B2D31"
+    accent_color_label: str = "none"
 
     @classmethod
     def load(cls) -> "CustomPanelConfig":
@@ -80,6 +88,16 @@ class CustomPanelConfig:
             return int(clean, 16)
         except Exception:
             return 0x2B2D31
+
+    @property
+    def status_display(self) -> str:
+        return "Active" if self.is_active else "Disabled"
+
+    @property
+    def categories_display(self) -> str:
+        total = 5
+        active = len(self.active_category_ids)
+        return f"{active}/{total} active"
 
 
 panel_config = CustomPanelConfig.load()

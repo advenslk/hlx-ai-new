@@ -38,7 +38,7 @@ class HelzerxBot(commands.Bot):
         intents.guilds = True
 
         super().__init__(
-            command_prefix="!", # Fallback prefix; primary interface is slash commands
+            command_prefix=["*", "!"], # Supports *panel and !panel
             intents=intents,
             help_command=None,
             max_messages=1000
@@ -117,8 +117,8 @@ class HelzerxBot(commands.Bot):
         if not message.author.bot and message.guild:
             content_lower = message.content.strip().lower()
 
-            # 1. Admin !sync command
-            if content_lower == "!sync" and message.author.guild_permissions.administrator:
+            # 1. Admin !sync or *sync command
+            if content_lower in ("!sync", "*sync") and message.author.guild_permissions.administrator:
                 try:
                     self.tree.copy_global_to(guild=message.guild)
                     synced = await self.tree.sync(guild=message.guild)
@@ -127,20 +127,11 @@ class HelzerxBot(commands.Bot):
                     await message.reply(f"❌ Failed to sync slash commands: `{err}`")
                 return
 
-            # 2. Admin !panel-setup interactive builder command
-            if content_lower == "!panel-setup" and message.author.guild_permissions.administrator:
-                from bot.commands.setup_cog import build_builder_dashboard_embed, ContainerPanelBuilderView
-                embed = build_builder_dashboard_embed()
-                view = ContainerPanelBuilderView()
-                await message.channel.send(embed=embed, view=view)
-                return
-
-            # 3. Admin !panel command
-            if content_lower == "!panel" and message.author.guild_permissions.administrator:
-                from bot.embeds.ticket_embeds import create_panel_embed
-                from bot.views.panel_view import TicketPanelView
-                embed = create_panel_embed()
-                view = TicketPanelView()
+            # 2. Admin *panel, !panel, !panel-setup command (Exact Ticket Panel Dashboard from Screenshot 2)
+            if content_lower in ("*panel", "!panel", "*panel-setup", "!panel-setup") and message.author.guild_permissions.administrator:
+                from bot.commands.setup_cog import build_ticket_panel_control_embed, TicketPanelControlView
+                embed = build_ticket_panel_control_embed()
+                view = TicketPanelControlView()
                 await message.channel.send(embed=embed, view=view)
                 return
 
