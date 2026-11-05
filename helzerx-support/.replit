@@ -1,0 +1,13 @@
+run = "python3 bot/main.py"
+entrypoint = "bot/main.py"
+modules = ["python-3.11", "postgresql-16"]
+
+[nix]
+channel = "stable-23_11"
+
+[env]
+PYTHONUNBUFFERED = "1"
+
+[deployment]
+run = ["python3", "bot/main.py"]
+deploymentTarget = "cloudrun"

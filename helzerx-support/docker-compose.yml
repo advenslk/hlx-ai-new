@@ -1,0 +1,60 @@
+services:
+  # HELZERX AI Discord Bot
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helzerx-ai-bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://helzerx_user:helzerx_secure_pass@postgres:5432/helzerx_support
+      - SYNC_DATABASE_URL=postgresql+psycopg2://helzerx_user:helzerx_secure_pass@postgres:5432/helzerx_support
+    volumes:
+      - ./logs:/app/logs
+      - ./transcripts:/app/transcripts
+      - ./knowledge/data:/app/knowledge/data
+
+  # PostgreSQL Production Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: helzerx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: helzerx_user
+      POSTGRES_PASSWORD: helzerx_secure_pass
+      POSTGRES_DB: helzerx_support
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helzerx_user -d helzerx_support"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional Redis Cache (for fast session caching & distributed rate-limiting)
+  redis:
+    image: redis:7-alpine
+    container_name: helzerx-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

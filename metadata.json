@@ -1,0 +1,6 @@
+{
+  "name": "HELZERX AI Support",
+  "description": "Enterprise AI Discord Ticket Support System powered by NVIDIA NIM, PostgreSQL, and intelligent multi-lingual customer routing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
