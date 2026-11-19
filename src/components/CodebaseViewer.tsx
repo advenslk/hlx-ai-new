@@ -104,6 +104,20 @@ class Config:
 config = Config()`
       },
       {
+        name: 'emoji.py',
+        path: 'bot/emoji.py',
+        type: 'file',
+        language: 'python',
+        content: `"""
+HELZERX AI Support - Centralized Emoji Registry & Dynamic Emoji Loader
+Supports Unicode emojis ("✅") and Discord custom emojis ("<:name:id>").
+Loads defaults -> emojis.json -> EMOJI_* env vars -> guild hzx_* auto-sync.
+"""
+from bot.emoji import EmojiLoader, DEFAULT_EMOJIS, emojis, get_emoji
+
+# Edit emojis.json or DEFAULT_EMOJIS in bot/emoji.py, or run /emoji-set & /emojis-reload in Discord.`
+      },
+      {
         name: 'ai',
         path: 'bot/ai',
         type: 'dir',
@@ -326,6 +340,27 @@ NVIDIA_API_KEY="nvapi-your-key-here"
 NVIDIA_MODEL="meta/llama-3.1-70b-instruct"
 
 DATABASE_URL="postgresql+asyncpg://helzerx_user:helzerx_secure_pass@localhost:5432/helzerx_support"`
+  },
+  {
+    name: 'emojis.json',
+    path: 'emojis.json',
+    type: 'file',
+    language: 'json',
+    content: `{
+  "success": "✅",
+  "error": "❌",
+  "warning": "⚠️",
+  "headset": "🎧",
+  "claim": "✋",
+  "human": "👤",
+  "note": "📝",
+  "lock": "🔒",
+  "cat_general": "👥",
+  "cat_cloud_hosting": "📚",
+  "cat_technical": "🖥️",
+  "cat_billing": "💳",
+  "cat_partnership": "🚀"
+}`
   }
 ];
 

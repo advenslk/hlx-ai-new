@@ -7,6 +7,8 @@ from __future__ import annotations
 import discord
 from discord import ui
 
+from bot.emoji import emojis
+
 
 class ConfirmCloseView(ui.View):
     """Confirmation buttons for ticket closure."""
@@ -14,8 +16,10 @@ class ConfirmCloseView(ui.View):
     def __init__(self, channel_id: int):
         super().__init__(timeout=60)
         self.channel_id = channel_id
+        self.confirm_button.emoji = emojis.as_partial("success")
+        self.cancel_button.emoji = emojis.as_partial("error")
 
-    @ui.button(label="Confirm & Close", style=discord.ButtonStyle.danger, emoji="✅")
+    @ui.button(label="Confirm & Close", style=discord.ButtonStyle.danger, emoji=emojis.success)
     async def confirm_button(self, interaction: discord.Interaction, button: ui.Button):
         from bot.tickets.manager import ticket_manager
 
@@ -27,7 +31,7 @@ class ConfirmCloseView(ui.View):
             reason="Closed by user confirmation"
         )
 
-    @ui.button(label="Cancel", style=discord.ButtonStyle.secondary, emoji="❌")
+    @ui.button(label="Cancel", style=discord.ButtonStyle.secondary, emoji=emojis.error)
     async def cancel_button(self, interaction: discord.Interaction, button: ui.Button):
         self.stop()
         await interaction.message.delete()

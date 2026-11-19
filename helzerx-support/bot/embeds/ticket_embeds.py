@@ -8,6 +8,7 @@ import discord
 import datetime
 from typing import Optional, List
 from bot.config import config
+from bot.emoji import emojis
 from bot.panel_config import panel_config
 
 # Discord dark theme background color (0x2B2D31) removes the left-side colored line
@@ -46,7 +47,7 @@ def create_panel_embed(
         f"__{panel_config.support_categories_title}__",
         cats.strip(),
         "\n---",
-        f"ℹ️ **{panel_config.note_title}**",
+        f"{emojis.info} **{panel_config.note_title}**",
         note.strip()
     ]
 
@@ -80,7 +81,7 @@ def create_ticket_welcome_embed(
     Creates the Container V2 ticket session card without side color line.
     """
     embed = discord.Embed(
-        title=f"🎧 Ticket {ticket_code} • {category_name}",
+        title=f"{emojis.headset} Ticket {ticket_code} • {category_name}",
         description=(
             f"Hello {creator.mention}, your private support channel is ready.\n"
             f"Our technical diagnostics session has started below. "
@@ -101,21 +102,21 @@ def create_ticket_welcome_embed(
         meta_lines.append(f"**Service / Node ID:** `{server_identifier}`")
 
     embed.add_field(
-        name="📋 Session Attributes",
+        name=f"{emojis.clipboard} Session Attributes",
         value="\n".join(meta_lines),
         inline=False
     )
 
     if subject:
         embed.add_field(
-            name="📌 Initial Issue Summary",
+            name=f"{emojis.pin} Initial Issue Summary",
             value=f"> {subject}",
             inline=False
         )
 
     embed.add_field(
-        name="⚙️ Interactive Controls",
-        value="`[✋ Claim]` to assign staff • `[👤 Request Human]` to alert on-duty engineer • `[🔒 Close]` when resolved",
+        name=f"{emojis.settings} Interactive Controls",
+        value=f"`[{emojis.claim} Claim]` to assign staff • `[{emojis.human} Request Human]` to alert on-duty engineer • `[{emojis.lock} Close]` when resolved",
         inline=False
     )
 
@@ -126,7 +127,7 @@ def create_ticket_welcome_embed(
 def create_escalation_embed(ticket_code: str, reason: str, priority: str = "HIGH") -> discord.Embed:
     """Container V2 embed when a ticket is escalated to human support."""
     embed = discord.Embed(
-        title=f"🔔 Ticket {ticket_code} • Human Staff Summoned",
+        title=f"{emojis.bell} Ticket {ticket_code} • Human Staff Summoned",
         description=(
             f"This ticket has been marked for **human engineer intervention**.\n"
             f"Automated diagnostics have been paused on this channel."
@@ -148,7 +149,7 @@ def create_ticket_closed_embed(
 ) -> discord.Embed:
     """Container V2 embed displayed when a ticket is closed."""
     embed = discord.Embed(
-        title=f"🔒 Ticket {ticket_code} Marked as Resolved",
+        title=f"{emojis.lock} Ticket {ticket_code} Marked as Resolved",
         description="The support session has been concluded. An HTML transcript has been generated and archived.",
         color=SEAMLESS_CONTAINER_COLOR,
         timestamp=datetime.datetime.now(datetime.timezone.utc)

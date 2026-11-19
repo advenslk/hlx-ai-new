@@ -11,6 +11,7 @@ from discord.ext import commands
 from typing import Optional, List
 
 from bot.config import config, TICKET_CATEGORIES
+from bot.emoji import emojis
 from bot.panel_config import panel_config, CustomPanelConfig
 from bot.security.permissions import require_admin
 from bot.embeds.ticket_embeds import create_panel_embed, SEAMLESS_CONTAINER_COLOR
@@ -101,7 +102,7 @@ class ConfigureLogsModal(ui.Modal, title="Configure Ticket Logs Channel"):
             view = TicketPanelControlView()
             await interaction.response.edit_message(embed=embed, view=view)
         else:
-            await interaction.response.send_message("❌ Invalid channel ID. Please provide a numeric ID or mention.", ephemeral=True)
+            await interaction.response.send_message(f"{emojis.error} Invalid channel ID. Please provide a numeric ID or mention.", ephemeral=True)
 
 
 class ManageCategoriesSelect(ui.Select):
@@ -109,11 +110,11 @@ class ManageCategoriesSelect(ui.Select):
 
     def __init__(self):
         primary_categories = [
-            ("general", "General Support", "👥"),
-            ("cloud_hosting", "Cloud & Hosting", "📚"),
-            ("technical", "Technical Issues", "🖥️"),
-            ("billing", "Billing & Payments", "💳"),
-            ("partnership", "Partnerships & Business", "🚀")
+            ("general", "General Support", emojis.as_partial("cat_general")),
+            ("cloud_hosting", "Cloud & Hosting", emojis.as_partial("cat_cloud_hosting")),
+            ("technical", "Technical Issues", emojis.as_partial("cat_technical")),
+            ("billing", "Billing & Payments", emojis.as_partial("cat_billing")),
+            ("partnership", "Partnerships & Business", emojis.as_partial("cat_partnership"))
         ]
         options = [
             discord.SelectOption(
@@ -143,8 +144,9 @@ class ManageCategoriesView(ui.View):
     def __init__(self):
         super().__init__(timeout=180)
         self.add_item(ManageCategoriesSelect())
+        self.back_button.emoji = emojis.as_partial("back")
 
-    @ui.button(label="Back to Panel Control", style=discord.ButtonStyle.secondary, emoji="⬅️")
+    @ui.button(label="Back to Panel Control", style=discord.ButtonStyle.secondary, emoji=emojis.back)
     async def back_button(self, interaction: discord.Interaction, button: ui.Button):
         embed = build_ticket_panel_control_embed()
         view = TicketPanelControlView()
@@ -154,15 +156,16 @@ class ManageCategoriesView(ui.View):
 class DeleteConfirmView(ui.View):
     def __init__(self):
         super().__init__(timeout=60)
+        self.confirm_delete.emoji = emojis.as_partial("trash")
 
-    @ui.button(label="Confirm Reset / Delete", style=discord.ButtonStyle.danger, emoji="🗑️")
+    @ui.button(label="Confirm Reset / Delete", style=discord.ButtonStyle.danger, emoji=emojis.trash)
     async def confirm_delete(self, interaction: discord.Interaction, button: ui.Button):
         global panel_config
         panel_config = CustomPanelConfig()
         panel_config.save()
         embed = build_ticket_panel_control_embed()
         view = TicketPanelControlView()
-        await interaction.response.edit_message(content="✅ **Ticket Panel Reset to Factory Defaults!**", embed=embed, view=view)
+        await interaction.response.edit_message(content=f"{emojis.success} **Ticket Panel Reset to Factory Defaults!**", embed=embed, view=view)
 
     @ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
     async def cancel_delete(self, interaction: discord.Interaction, button: ui.Button):
@@ -183,7 +186,7 @@ def build_ticket_panel_control_embed() -> discord.Embed:
     Categories: 5/5 active
     """
     embed = discord.Embed(
-        title="📚 Ticket Panel",
+        title=f"{emojis.panel} Ticket Panel",
         description=(
             f"**Status:** {panel_config.status_display}\n"
             f"**Categories:** {panel_config.categories_display}"
@@ -238,7 +241,7 @@ class TicketPanelControlView(ui.View):
     @ui.button(label="Manage Categories", style=discord.ButtonStyle.primary, row=2)
     async def manage_categories_button(self, interaction: discord.Interaction, button: ui.Button):
         embed = discord.Embed(
-            title="📋 Manage Ticket Categories",
+            title=f"{emojis.clipboard} Manage Ticket Categories",
             description="Select which categories should be active on the support panel dropdown below:",
             color=SEAMLESS_CONTAINER_COLOR
         )
@@ -257,14 +260,14 @@ class TicketPanelControlView(ui.View):
         view = TicketPanelView()
         await interaction.channel.send(embed=embed, view=view)
         await interaction.response.send_message(
-            f"✅ **Support Ticket Panel Sent!** Active in {interaction.channel.mention}.",
+            f"{emojis.success} **Support Ticket Panel Sent!** Active in {interaction.channel.mention}.",
             ephemeral=True
         )
 
     @ui.button(label="Delete Panel", style=discord.ButtonStyle.danger, row=4)
     async def delete_panel_button(self, interaction: discord.Interaction, button: ui.Button):
         embed = discord.Embed(
-            title="⚠️ Delete / Reset Panel Configuration?",
+            title=f"{emojis.warning} Delete / Reset Panel Configuration?",
             description="Are you sure you want to reset the panel configuration back to default HelzerX branding?",
             color=0xEF4444
         )
@@ -326,7 +329,7 @@ class SetupCog(commands.Cog):
         panel_config = CustomPanelConfig()
         panel_config.save()
         await interaction.response.send_message(
-            "🔄 **Panel Reset**: Restored default HelzerX screenshot configuration.",
+            f"{emojis.reset} **Panel Reset**: Restored default HelzerX screenshot configuration.",
             ephemeral=True
         )
 
@@ -343,12 +346,46 @@ class SetupCog(commands.Cog):
             self.bot.tree.copy_global_to(guild=interaction.guild)
             synced = await self.bot.tree.sync(guild=interaction.guild)
             await interaction.followup.send(
-                f"⚡ **Sync Successful**: Instantly synchronized `{len(synced)}` slash commands to **{interaction.guild.name}**.",
+                f"{emojis.sync} **Sync Successful**: Instantly synchronized `{len(synced)}` slash commands to **{interaction.guild.name}**.",
                 ephemeral=True
             )
         except Exception as e:
             logger.error(f"Failed to sync commands: {e}")
-            await interaction.followup.send(f"❌ Synchronization failed: {e}", ephemeral=True)
+            await interaction.followup.send(f"{emojis.error} Synchronization failed: {e}", ephemeral=True)
+
+    # Supports /emojis-reload
+    @app_commands.command(
+        name="emojis-reload",
+        description="Reloads custom and Unicode emojis from emojis.json without restarting the bot."
+    )
+    @require_admin()
+    async def emojis_reload_command(self, interaction: discord.Interaction):
+        loaded = emojis.reload()
+        guild_matched = emojis.load_from_guild(interaction.guild) if interaction.guild else 0
+        await interaction.response.send_message(
+            f"{emojis.success} **Emojis Reloaded**: Loaded `{len(loaded)}` emoji keys (`{guild_matched}` matched from server custom emojis).",
+            ephemeral=True
+        )
+
+    # Supports /emoji-set
+    @app_commands.command(
+        name="emoji-set",
+        description="Sets a custom or Unicode emoji for any key and saves it to emojis.json."
+    )
+    @app_commands.describe(
+        key="Emoji key (e.g. success, claim, lock, headset, cat_general)",
+        emoji="Unicode emoji or custom Discord emoji (<:name:id>)"
+    )
+    @require_admin()
+    async def emoji_set_command(self, interaction: discord.Interaction, key: str, emoji: str):
+        try:
+            updated = emojis.set(key.strip().lower(), emoji, save=True)
+            await interaction.response.send_message(
+                f"{emojis.success} **Emoji Updated**: `{key.strip().lower()}` → {updated} (saved to `emojis.json`).",
+                ephemeral=True
+            )
+        except ValueError as e:
+            await interaction.response.send_message(f"{emojis.error} {e}", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

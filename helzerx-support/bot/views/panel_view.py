@@ -9,9 +9,8 @@ from discord import ui
 from typing import Optional
 
 from bot.config import config, TICKET_CATEGORIES
+from bot.emoji import emojis
 from bot.views.ticket_modal import TicketCreateModal
-
-
 from bot.panel_config import panel_config
 
 
@@ -20,13 +19,13 @@ class CategorySelect(ui.Select):
 
     def __init__(self, placeholder: Optional[str] = None):
         # 5 primary screenshot categories
-        primary_ids = ["general", "cloud_hosting", "technical", "billing", "partnership"]
+        primary_ids = panel_config.active_category_ids or ["general", "cloud_hosting", "technical", "billing", "partnership"]
         options = [
             discord.SelectOption(
                 label=TICKET_CATEGORIES[cat_id].name,
                 value=cat_id,
                 description=TICKET_CATEGORIES[cat_id].description[:100],
-                emoji=TICKET_CATEGORIES[cat_id].emoji
+                emoji=emojis.as_partial(f"cat_{cat_id}", TICKET_CATEGORIES[cat_id].emoji)
             )
             for cat_id in primary_ids
             if cat_id in TICKET_CATEGORIES

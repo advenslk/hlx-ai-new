@@ -9,6 +9,7 @@ from discord import ui
 from typing import Optional
 
 from bot.config import config
+from bot.emoji import emojis
 from bot.security.permissions import is_staff_check
 from bot.views.confirm_close_view import ConfirmCloseView
 
@@ -37,7 +38,7 @@ class InternalNoteModal(ui.Modal, title="Add Confidential Internal Note"):
             content=self.note_text.value
         )
         await interaction.response.send_message(
-            "🔒 **Internal Note Saved**: This note is recorded in the database audit log and will not be displayed to the customer.",
+            f"{emojis.lock} **Internal Note Saved**: This note is recorded in the database audit log and will not be displayed to the customer.",
             ephemeral=True
         )
 
@@ -47,17 +48,21 @@ class TicketControlView(ui.View):
 
     def __init__(self):
         super().__init__(timeout=None)
+        self.claim_button.emoji = emojis.as_partial("claim")
+        self.request_human_button.emoji = emojis.as_partial("human")
+        self.internal_note_button.emoji = emojis.as_partial("note")
+        self.close_button.emoji = emojis.as_partial("lock")
 
     @ui.button(
         label="Claim Ticket",
         style=discord.ButtonStyle.primary,
         custom_id="btn_ticket_claim",
-        emoji="✋"
+        emoji=emojis.claim
     )
     async def claim_button(self, interaction: discord.Interaction, button: ui.Button):
         if not is_staff_check(interaction):
             await interaction.response.send_message(
-                "❌ **Staff Only**: Only authorized HELZERX Support Staff can claim tickets.",
+                f"{emojis.error} **Staff Only**: Only authorized HELZERX Support Staff can claim tickets.",
                 ephemeral=True
             )
             return
@@ -69,7 +74,7 @@ class TicketControlView(ui.View):
         button.style = discord.ButtonStyle.secondary
         await interaction.message.edit(view=self)
         await interaction.response.send_message(
-            f"✅ **Ticket Claimed**: {interaction.user.mention} is now the primary assignee.",
+            f"{emojis.success} **Ticket Claimed**: {interaction.user.mention} is now the primary assignee.",
             ephemeral=False
         )
 
@@ -77,7 +82,7 @@ class TicketControlView(ui.View):
         label="Request Human Staff",
         style=discord.ButtonStyle.secondary,
         custom_id="btn_ticket_request_human",
-        emoji="👤"
+        emoji=emojis.human
     )
     async def request_human_button(self, interaction: discord.Interaction, button: ui.Button):
         from bot.tickets.manager import ticket_manager
@@ -88,7 +93,7 @@ class TicketControlView(ui.View):
             reason="Customer clicked 'Request Human Staff' button"
         )
         await interaction.response.send_message(
-            "🔔 **Escalation Dispatched**: An on-duty HELZERX engineer has been notified and will take over shortly.",
+            f"{emojis.bell} **Escalation Dispatched**: An on-duty HELZERX engineer has been notified and will take over shortly.",
             ephemeral=False
         )
 
@@ -96,12 +101,12 @@ class TicketControlView(ui.View):
         label="Internal Note",
         style=discord.ButtonStyle.secondary,
         custom_id="btn_ticket_internal_note",
-        emoji="📝"
+        emoji=emojis.note
     )
     async def internal_note_button(self, interaction: discord.Interaction, button: ui.Button):
         if not is_staff_check(interaction):
             await interaction.response.send_message(
-                "❌ **Staff Only**: Internal notes are reserved exclusively for HELZERX staff.",
+                f"{emojis.error} **Staff Only**: Internal notes are reserved exclusively for HELZERX staff.",
                 ephemeral=True
             )
             return
@@ -113,12 +118,12 @@ class TicketControlView(ui.View):
         label="Close Ticket",
         style=discord.ButtonStyle.danger,
         custom_id="btn_ticket_close",
-        emoji="🔒"
+        emoji=emojis.lock
     )
     async def close_button(self, interaction: discord.Interaction, button: ui.Button):
         confirm_view = ConfirmCloseView(channel_id=interaction.channel_id)
         await interaction.response.send_message(
-            "⚠️ **Confirm Closure**: Are you sure you want to mark this ticket as resolved and archive the channel?",
+            f"{emojis.warning} **Confirm Closure**: Are you sure you want to mark this ticket as resolved and archive the channel?",
             view=confirm_view,
             ephemeral=False
         )

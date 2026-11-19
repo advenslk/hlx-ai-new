@@ -9,6 +9,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot.config import config
+from bot.emoji import emojis
 from bot.security.permissions import require_staff, require_admin
 from bot.ai.client import ai_client
 from bot.database.session import AsyncSessionLocal
@@ -53,13 +54,13 @@ class AICog(commands.Cog):
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, interaction.channel.id)
             if not db_ticket:
-                await interaction.response.send_message("❌ This channel is not an active ticket.", ephemeral=True)
+                await interaction.response.send_message(f"{emojis.error} This channel is not an active ticket.", ephemeral=True)
                 return
 
             db_ticket.ai_enabled = True
             await session.commit()
 
-        await interaction.response.send_message("🤖 **AI Enabled**: NVIDIA NIM AI Support is now active in this ticket.")
+        await interaction.response.send_message(f"{emojis.ai} **AI Enabled**: NVIDIA NIM AI Support is now active in this ticket.")
 
     @app_commands.command(name="ai-disable", description="Disables automated AI assistance for this ticket.")
     @require_staff()
@@ -67,13 +68,13 @@ class AICog(commands.Cog):
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, interaction.channel.id)
             if not db_ticket:
-                await interaction.response.send_message("❌ This channel is not an active ticket.", ephemeral=True)
+                await interaction.response.send_message(f"{emojis.error} This channel is not an active ticket.", ephemeral=True)
                 return
 
             db_ticket.ai_enabled = False
             await session.commit()
 
-        await interaction.response.send_message("👤 **AI Disabled**: Automated AI responses paused. Channel is in manual staff mode.")
+        await interaction.response.send_message(f"{emojis.human} **AI Disabled**: Automated AI responses paused. Channel is in manual staff mode.")
 
 
 async def setup(bot: commands.Bot):

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import discord
 from discord import app_commands
+from bot.emoji import emojis
 from bot.utils.logger import logger
 
 
@@ -16,12 +17,12 @@ async def on_tree_error(interaction: discord.Interaction, error: app_commands.Ap
         return
     elif isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(
-            f"⏳ **Cooldown**: Please wait `{error.retry_after:.1f}` seconds before reusing this command.",
+            f"{emojis.loading} **Cooldown**: Please wait `{error.retry_after:.1f}` seconds before reusing this command.",
             ephemeral=True
         )
     else:
         logger.error(f"Command Error in /{interaction.command.name if interaction.command else 'unknown'}: {error}", exc_info=True)
-        msg = "❌ An unexpected internal error occurred while executing this command."
+        msg = f"{emojis.error} An unexpected internal error occurred while executing this command."
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
         else:

@@ -8,6 +8,7 @@ import discord
 from discord import app_commands
 from typing import Callable, Any
 from bot.config import config
+from bot.emoji import emojis
 
 
 def is_staff_check(interaction: discord.Interaction) -> bool:
@@ -58,7 +59,7 @@ def require_staff():
     """Slash command decorator requiring Support Staff or Admin role."""
     async def predicate(interaction: discord.Interaction) -> bool:
         if not is_staff_check(interaction):
-            msg = "❌ **Access Denied**: You require an authorized HELZERX Support Staff role or Administrator permissions to execute this command."
+            msg = f"{emojis.error} **Access Denied**: You require an authorized HELZERX Support Staff role or Administrator permissions to execute this command."
             if not interaction.response.is_done():
                 await interaction.response.send_message(msg, ephemeral=True)
             else:
@@ -72,7 +73,7 @@ def require_admin():
     """Slash command decorator requiring HELZERX Admin role."""
     async def predicate(interaction: discord.Interaction) -> bool:
         if not is_admin_check(interaction):
-            msg = "❌ **Access Denied**: You require an authorized HELZERX Administrator role to execute this command."
+            msg = f"{emojis.error} **Access Denied**: You require an authorized HELZERX Administrator role to execute this command."
             if not interaction.response.is_done():
                 await interaction.response.send_message(msg, ephemeral=True)
             else:

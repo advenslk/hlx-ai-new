@@ -10,6 +10,7 @@ from typing import Tuple, Optional
 from datetime import datetime, timezone
 
 from bot.config import config, TICKET_CATEGORIES
+from bot.emoji import emojis
 from bot.database.session import AsyncSessionLocal
 from bot.database import crud
 from bot.ai.classifier import classify_ticket
@@ -163,7 +164,7 @@ class TicketManager:
 
         # 6. Urgent Priority Notification
         if priority == "URGENT":
-            urgent_msg = "🚨 **URGENT TICKET ALERT**: This issue has been classified as mission-critical. Staff has been notified."
+            urgent_msg = f"{emojis.urgent} **URGENT TICKET ALERT**: This issue has been classified as mission-critical. Staff has been notified."
             staff_mentions = " ".join([f"<@&{r_id}>" for r_id in config.SUPPORT_ROLE_IDS])
             if staff_mentions:
                 urgent_msg = f"{staff_mentions} {urgent_msg}"
@@ -296,7 +297,7 @@ class TicketManager:
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, channel.id)
             if not db_ticket:
-                await channel.send("❌ Error: Ticket record not found in database.")
+                await channel.send(f"{emojis.error} Error: Ticket record not found in database.")
                 return
 
             db_ticket.status = "CLOSED"
@@ -358,14 +359,14 @@ class TicketManager:
             if archive_chan:
                 try:
                     await archive_chan.send(
-                        content=f"📄 **Transcript for Ticket {db_ticket.ticket_code}** (Closed by {closed_by.mention}):",
+                        content=f"{emojis.transcript} **Transcript for Ticket {db_ticket.ticket_code}** (Closed by {closed_by.mention}):",
                         file=discord.File(file_path, filename=f"transcript_{db_ticket.ticket_code}.html")
                     )
                 except Exception as e:
                     logger.error(f"Failed to send transcript to archive channel: {e}")
 
         # Send deletion notification
-        await channel.send("⏳ **Notice**: This channel will be permanently deleted in 5 seconds...")
+        await channel.send(f"{emojis.loading} **Notice**: This channel will be permanently deleted in 5 seconds...")
         await asyncio.sleep(5)
         await channel.delete(reason=f"HELZERX Ticket {db_ticket.ticket_code} closed.")
 

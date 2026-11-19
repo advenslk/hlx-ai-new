@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import discord
 from bot.config import config
+from bot.emoji import emojis
 from bot.database.session import AsyncSessionLocal
 from bot.database import crud
 from bot.security.guards import check_prompt_injection
@@ -41,7 +42,7 @@ async def handle_ticket_message(message: discord.Message) -> None:
             try:
                 # Optionally warn user in ephemeral or channel note
                 await message.channel.send(
-                    f"⚠️ {message.author.mention}, **Sensitive Data Redacted**: We detected a potential password, API key, or SSH secret in your message. For your security, credentials have been redacted in ticket logs. Never share sensitive keys.",
+                    f"{emojis.warning} {message.author.mention}, **Sensitive Data Redacted**: We detected a potential password, API key, or SSH secret in your message. For your security, credentials have been redacted in ticket logs. Never share sensitive keys.",
                     delete_after=12
                 )
             except Exception:
@@ -60,7 +61,7 @@ async def handle_ticket_message(message: discord.Message) -> None:
                 details=f"Reason: {injection_reason}"
             )
             await message.channel.send(
-                "🛡️ **Security Notice**: Your message was flagged for containing restricted system override instructions. Support interactions are strictly logged and monitored.",
+                f"{emojis.security} **Security Notice**: Your message was flagged for containing restricted system override instructions. Support interactions are strictly logged and monitored.",
                 delete_after=10
             )
             # Log sanitized message and exit without triggering AI
@@ -81,7 +82,7 @@ async def handle_ticket_message(message: discord.Message) -> None:
             allowed, retry_after = rate_limiter.is_allowed(message.author.id)
             if not allowed:
                 await message.channel.send(
-                    f"⏳ **Rate Limit**: Please slow down. You can send another message in `{retry_after}` seconds.",
+                    f"{emojis.loading} **Rate Limit**: Please slow down. You can send another message in `{retry_after}` seconds.",
                     delete_after=6
                 )
                 return

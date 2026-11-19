@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any
 from pathlib import Path
 
+from bot.emoji import emojis
+
 # Load .env file from root or local directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -48,7 +50,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="general",
         name="General Support",
         description="General questions about HELZERX services and accounts",
-        emoji="👥",
+        emoji=emojis.cat_general,
         default_priority="NORMAL",
         department="Customer Service"
     ),
@@ -56,7 +58,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="cloud_hosting",
         name="Cloud & Hosting",
         description="VPS, Dedicated servers, Minecraft & cloud infrastructure",
-        emoji="📚",
+        emoji=emojis.cat_cloud_hosting,
         default_priority="HIGH",
         department="Infrastructure Operations"
     ),
@@ -64,7 +66,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="technical",
         name="Technical Issues",
         description="OS, networking, Docker, SSL, and general server problems",
-        emoji="🖥️",
+        emoji=emojis.cat_technical,
         default_priority="NORMAL",
         department="Technical Support"
     ),
@@ -72,7 +74,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="billing",
         name="Billing & Payments",
         description="Invoices, payment gateways, subscriptions, renewals, refunds",
-        emoji="💳",
+        emoji=emojis.cat_billing,
         default_priority="NORMAL",
         department="Billing & Finance"
     ),
@@ -80,7 +82,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="partnership",
         name="Partnerships & Business",
         description="Affiliate programs, sponsorships, enterprise inquiries",
-        emoji="🚀",
+        emoji=emojis.cat_partnership,
         default_priority="LOW",
         department="Management"
     ),
@@ -88,7 +90,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="minecraft",
         name="Minecraft Hosting",
         description="Paper/Purpur, Pterodactyl, plugin issues, crash reports, ports",
-        emoji="⛏️",
+        emoji=emojis.cat_minecraft,
         default_priority="NORMAL",
         department="Game Server Operations"
     ),
@@ -96,7 +98,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="vps",
         name="VPS Support",
         description="KVM VPS provisioning, reinstallation, kernel, network routing",
-        emoji="🖥️",
+        emoji=emojis.cat_vps,
         default_priority="HIGH",
         department="Infrastructure Team"
     ),
@@ -104,7 +106,7 @@ TICKET_CATEGORIES: Dict[str, TicketCategoryDef] = {
         id="other",
         name="Other Inquiries",
         description="Uncategorized questions and custom requests",
-        emoji="❓",
+        emoji=emojis.cat_other,
         default_priority="NORMAL",
         department="Customer Service"
     ),

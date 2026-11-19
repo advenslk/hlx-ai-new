@@ -8,6 +8,7 @@ import discord
 from typing import Optional
 
 from bot.config import config
+from bot.emoji import emojis
 from bot.database.session import AsyncSessionLocal
 from bot.database import crud
 from bot.utils.logger import logger
@@ -129,7 +130,7 @@ class StaffManager:
                 log_chan = guild.get_channel(config.STAFF_LOG_CHANNEL_ID)
                 if log_chan:
                     embed = discord.Embed(
-                        title=f"🔒 Internal Note Added • {db_ticket.ticket_code}",
+                        title=f"{emojis.lock} Internal Note Added • {db_ticket.ticket_code}",
                         description=content,
                         color=config.BRAND_WARNING
                     )

@@ -16,6 +16,7 @@ from tests.test_security import TestSecurityControls
 from tests.test_ai_engine import TestAIEngine
 from tests.test_knowledge import TestKnowledgeBase
 from tests.test_tickets import TestTicketSystem
+from tests.test_emoji import TestEmojiLoader
 
 
 def run_all_tests() -> bool:
@@ -30,6 +31,7 @@ def run_all_tests() -> bool:
     suite.addTests(loader.loadTestsFromTestCase(TestAIEngine))
     suite.addTests(loader.loadTestsFromTestCase(TestKnowledgeBase))
     suite.addTests(loader.loadTestsFromTestCase(TestTicketSystem))
+    suite.addTests(loader.loadTestsFromTestCase(TestEmojiLoader))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

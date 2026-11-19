@@ -10,6 +10,7 @@ from discord.ext import commands
 from typing import Optional
 
 from bot.config import config, TICKET_CATEGORIES
+from bot.emoji import emojis
 from bot.security.permissions import require_staff, is_staff_check
 from bot.tickets.manager import ticket_manager
 from bot.staff.manager import staff_manager
@@ -51,11 +52,11 @@ class TicketCog(commands.Cog):
                 description=description
             )
             await interaction.followup.send(
-                f"✅ Ticket created successfully: {channel.mention} (`{code}`)",
+                f"{emojis.success} Ticket created successfully: {channel.mention} (`{code}`)",
                 ephemeral=True
             )
         except Exception as e:
-            await interaction.followup.send(f"❌ Could not create ticket: {e}", ephemeral=True)
+            await interaction.followup.send(f"{emojis.error} Could not create ticket: {e}", ephemeral=True)
 
     @app_commands.command(name="claim", description="Claims the current ticket as the primary responding staff member.")
     @require_staff()
@@ -63,11 +64,11 @@ class TicketCog(commands.Cog):
         success = await staff_manager.claim_ticket(interaction.channel, interaction.user)
         if success:
             await interaction.response.send_message(
-                f"✋ **Ticket Claimed**: {interaction.user.mention} is assigned to this ticket.",
+                f"{emojis.claim} **Ticket Claimed**: {interaction.user.mention} is assigned to this ticket.",
                 ephemeral=False
             )
         else:
-            await interaction.response.send_message("❌ This channel is not an active ticket.", ephemeral=True)
+            await interaction.response.send_message(f"{emojis.error} This channel is not an active ticket.", ephemeral=True)
 
     @app_commands.command(name="assign", description="Assigns this ticket to another staff member.")
     @app_commands.describe(member="Support staff member to assign")
@@ -76,17 +77,17 @@ class TicketCog(commands.Cog):
         success = await staff_manager.assign_ticket(interaction.channel, interaction.user, member)
         if success:
             await interaction.response.send_message(
-                f"📋 **Ticket Reassigned**: Ticket assigned to {member.mention} by {interaction.user.mention}.",
+                f"{emojis.clipboard} **Ticket Reassigned**: Ticket assigned to {member.mention} by {interaction.user.mention}.",
                 ephemeral=False
             )
         else:
-            await interaction.response.send_message("❌ This channel is not an active ticket.", ephemeral=True)
+            await interaction.response.send_message(f"{emojis.error} This channel is not an active ticket.", ephemeral=True)
 
     @app_commands.command(name="close", description="Closes and archives this support ticket.")
     @app_commands.describe(reason="Optional reason for ticket closure")
     async def close_command(self, interaction: discord.Interaction, reason: Optional[str] = None):
         await interaction.response.defer(ephemeral=True)
-        await interaction.followup.send("🔒 Processing ticket closure and generating transcript...", ephemeral=True)
+        await interaction.followup.send(f"{emojis.lock} Processing ticket closure and generating transcript...", ephemeral=True)
         await ticket_manager.close_ticket(
             channel=interaction.channel,
             closed_by=interaction.user,
@@ -99,7 +100,7 @@ class TicketCog(commands.Cog):
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, interaction.channel.id)
             if not db_ticket:
-                await interaction.response.send_message("❌ Not a ticket channel.", ephemeral=True)
+                await interaction.response.send_message(f"{emojis.error} Not a ticket channel.", ephemeral=True)
                 return
 
             db_ticket.status = "OPEN"
@@ -115,7 +116,7 @@ class TicketCog(commands.Cog):
             await session.commit()
 
         await interaction.response.send_message(
-            f"🔓 **Ticket Reopened**: Ticket `{db_ticket.ticket_code}` is marked active again by {interaction.user.mention}."
+            f"{emojis.unlock} **Ticket Reopened**: Ticket `{db_ticket.ticket_code}` is marked active again by {interaction.user.mention}."
         )
 
     @app_commands.command(name="transcript", description="Generates and exports an HTML transcript of this ticket.")
@@ -125,7 +126,7 @@ class TicketCog(commands.Cog):
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, interaction.channel.id)
             if not db_ticket:
-                await interaction.followup.send("❌ Channel is not a ticket.", ephemeral=True)
+                await interaction.followup.send(f"{emojis.error} Channel is not a ticket.", ephemeral=True)
                 return
 
             msgs_data = [
@@ -148,7 +149,7 @@ class TicketCog(commands.Cog):
             )
 
         await interaction.followup.send(
-            content=f"📄 Transcript for `{db_ticket.ticket_code}`:",
+            content=f"{emojis.transcript} Transcript for `{db_ticket.ticket_code}`:",
             file=discord.File(file_path, filename=f"transcript_{db_ticket.ticket_code}.html"),
             ephemeral=True
         )
@@ -158,7 +159,7 @@ class TicketCog(commands.Cog):
         async with AsyncSessionLocal() as session:
             db_ticket = await crud.get_ticket_by_channel(session, interaction.channel.id)
             if not db_ticket:
-                await interaction.response.send_message("❌ Not an active ticket channel.", ephemeral=True)
+                await interaction.response.send_message(f"{emojis.error} Not an active ticket channel.", ephemeral=True)
                 return
 
             embed = discord.Embed(

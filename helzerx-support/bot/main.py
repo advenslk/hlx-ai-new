@@ -19,6 +19,7 @@ import discord
 from discord.ext import commands
 
 from bot.config import config
+from bot.emoji import emojis
 from bot.utils.logger import logger
 from bot.database.session import init_db
 from bot.views.panel_view import TicketPanelView
@@ -96,12 +97,15 @@ class HelzerxBot(commands.Bot):
         logger.info(f"  AI Model: {config.NVIDIA_MODEL}")
         logger.info(f"==================================================")
 
-        # Immediate Guild Command Sync for VPS (makes commands visible in 1 second instead of waiting 1 hour)
+        # Load custom guild emojis (e.g. hzx_claim, hzx_success) and auto-sync guild slash commands
         for guild in self.guilds:
+            matched_emojis = emojis.load_from_guild(guild)
+            if matched_emojis:
+                logger.info(f"Loaded {matched_emojis} custom server emojis from guild: {guild.name} ({guild.id})")
             try:
                 self.tree.copy_global_to(guild=guild)
                 synced = await self.tree.sync(guild=guild)
-                logger.info(f"✅ Auto-synced {len(synced)} slash commands to guild: {guild.name} ({guild.id})")
+                logger.info(f"{emojis.success} Auto-synced {len(synced)} slash commands to guild: {guild.name} ({guild.id})")
             except Exception as sync_err:
                 logger.warning(f"Could not auto-sync commands to guild {guild.id}: {sync_err}")
 
@@ -122,9 +126,9 @@ class HelzerxBot(commands.Bot):
                 try:
                     self.tree.copy_global_to(guild=message.guild)
                     synced = await self.tree.sync(guild=message.guild)
-                    await message.reply(f"✅ **Slash Commands Synced!** Successfully synced `{len(synced)}` commands to this server.")
+                    await message.reply(f"{emojis.success} **Slash Commands Synced!** Successfully synced `{len(synced)}` commands to this server.")
                 except Exception as err:
-                    await message.reply(f"❌ Failed to sync slash commands: `{err}`")
+                    await message.reply(f"{emojis.error} Failed to sync slash commands: `{err}`")
                 return
 
             # 2. Admin *panel, !panel, !panel-setup command (Exact Ticket Panel Dashboard from Screenshot 2)

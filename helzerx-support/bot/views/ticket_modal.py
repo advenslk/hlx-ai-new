@@ -8,6 +8,7 @@ import discord
 from discord import ui
 from typing import Optional
 
+from bot.emoji import emojis
 from bot.utils.logger import logger
 
 
@@ -61,14 +62,14 @@ class TicketCreateModal(ui.Modal):
             )
 
             await interaction.followup.send(
-                f"✅ **Ticket Created**: Your private support channel has been provisioned: {channel.mention} (`{ticket_code}`).",
+                f"{emojis.success} **Ticket Created**: Your private support channel has been provisioned: {channel.mention} (`{ticket_code}`).",
                 ephemeral=True
             )
         except ValueError as val_err:
-            await interaction.followup.send(f"⚠️ {str(val_err)}", ephemeral=True)
+            await interaction.followup.send(f"{emojis.warning} {str(val_err)}", ephemeral=True)
         except Exception as e:
             logger.error(f"Error creating ticket for user {interaction.user.id}: {e}", exc_info=True)
             await interaction.followup.send(
-                "❌ An unexpected error occurred while creating your ticket. Please notify an administrator.",
+                f"{emojis.error} An unexpected error occurred while creating your ticket. Please notify an administrator.",
                 ephemeral=True
             )

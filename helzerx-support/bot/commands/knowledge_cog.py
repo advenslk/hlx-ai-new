@@ -10,6 +10,7 @@ from discord.ext import commands
 from typing import Optional
 
 from bot.config import config
+from bot.emoji import emojis
 from bot.security.permissions import require_staff, require_admin
 from bot.knowledge.manager import knowledge_manager
 from bot.database.session import AsyncSessionLocal
@@ -32,7 +33,7 @@ class KnowledgeCog(commands.Cog):
 
         results = knowledge_manager.rag.search(query, top_k=3)
         if not results:
-            await interaction.followup.send(f"🔍 No matching documentation found for: `{query}`", ephemeral=True)
+            await interaction.followup.send(f"{emojis.search} No matching documentation found for: `{query}`", ephemeral=True)
             return
 
         embed = discord.Embed(
@@ -99,7 +100,7 @@ class KnowledgeCog(commands.Cog):
             await session.commit()
 
         await interaction.followup.send(
-            f"✅ **Documentation Added**: Successfully indexed `{title}` for RAG context retrieval.",
+            f"{emojis.success} **Documentation Added**: Successfully indexed `{title}` for RAG context retrieval.",
             ephemeral=True
         )
 
@@ -119,7 +120,7 @@ class KnowledgeCog(commands.Cog):
         knowledge_manager._init_index()
 
         await interaction.response.send_message(
-            f"🗑️ Removed `{removed_count}` document(s) matching `{title_query}` from RAG index.",
+            f"{emojis.trash} Removed `{removed_count}` document(s) matching `{title_query}` from RAG index.",
             ephemeral=True
         )
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List
 from bot.config import config, BASE_DIR
+from bot.emoji import emojis
 
 CONFIG_FILE = BASE_DIR / "panel_config.json"
 
@@ -16,7 +17,7 @@ CONFIG_FILE = BASE_DIR / "panel_config.json"
 @dataclass
 class CustomPanelConfig:
     # Header & Title
-    title: str = "🎧 HelzerX Support Center 🎧"
+    title: str = field(default_factory=lambda: f"{emojis.headset} HelzerX Support Center {emojis.headset}")
     top_image_url: str = "/assets/helzerx-logo-3d.png"
     
     # Intro Description
@@ -28,13 +29,13 @@ class CustomPanelConfig:
     
     # Categories Section
     support_categories_title: str = "Support Categories"
-    categories_list: str = (
-        "• 👥 **General Support**\n"
-        "• 📚 **Cloud & Hosting**\n"
-        "• 🖥️ **Technical Issues**\n"
-        "• 💳 **Billing & Payments**\n"
-        "• 🚀 **Partnerships & Business**"
-    )
+    categories_list: str = field(default_factory=lambda: (
+        f"• {emojis.cat_general} **General Support**\n"
+        f"• {emojis.cat_cloud_hosting} **Cloud & Hosting**\n"
+        f"• {emojis.cat_technical} **Technical Issues**\n"
+        f"• {emojis.cat_billing} **Billing & Payments**\n"
+        f"• {emojis.cat_partnership} **Partnerships & Business**"
+    ))
     active_category_ids: List[str] = field(default_factory=lambda: [
         "general", "cloud_hosting", "technical", "billing", "partnership"
     ])
